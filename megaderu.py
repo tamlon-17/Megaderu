@@ -6,7 +6,7 @@ import streamlit as st
 import plotly.express as px
 
 st.set_page_config(page_title='めがで～る ２０２５')
-st.title('めがで～る ２０２５')
+st.title('めがで～る 2025')
 st.caption('これは、乾田直播の出芽を予測するウェブアプリ（2025年版）です。')
 st.caption(
     '予測がはずれても責任は一切取りませんので、ご了承のうえお使いください。')
