@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import streamlit as st
 import plotly.express as px
 
-st.set_page_config(page_title='めがで～る ２０２５')
+st.set_page_config(page_title='めがで～る 2025')
 st.title('めがで～る 2025')
 st.caption('これは、乾田直播の出芽を予測するウェブアプリ（2025年版）です。')
 st.caption(
