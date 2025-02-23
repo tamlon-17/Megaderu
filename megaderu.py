@@ -192,9 +192,7 @@ df11 = df_ave_temp.iloc[s_index.days + 1: s_index.days + delta_date.days + 2,
 
 df1 = df11.reset_index(drop=True)
 df2 = pd.Series(accumulate_valid_temp2)
-
 df3 = pd.Series(accumulate_valid_temp5)
-
 df_chart = pd.concat([df3, df2, df1], axis=1)
 df_chart.columns = ['5か年平均使用', '2か年平均使用', '月日']
 
