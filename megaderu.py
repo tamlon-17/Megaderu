@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 from datetime import date, timedelta
 import requests
@@ -18,25 +19,27 @@ st.subheader('予測結果')
 # 使用する年を今年に設定
 this_year = date.today().year
 # リストや辞書の定義
-# アメダス地点をリスト化（気象庁の並びで統一）
+# アメダス地点をリスト化と辞書化（気象庁の並びで統一）
 amedas_list = ['気仙沼', '川渡', '築館', '志津川', '古川', '大衡', '鹿島台',
                '石巻', '新川', '仙台', '白石', '亘理', '米山', '塩釜', '駒ノ湯',
                '丸森', '名取', '蔵王', '女川']
+amedas_dic = dict(気仙沼=1, 川渡=2, 築館=3, 志津川=4, 古川=5, 大衡=6, 鹿島台=7,
+                  石巻=8, 新川=9, 仙台=10, 白石=11, 亘理=12, 米山=14, 塩釜=15,
+                  駒ノ湯=16, 丸森=17, 名取=20, 蔵王=23, 女川=24)
+
 # 西部の市町村をリスト化
 east_city = ['泉区', '白石市', '蔵王町', '七ヶ宿町', '川崎町', '大和町',
              '大衡村', '色麻町', '加美町']
 # 市町村と気象協会のコードの辞書
-city_dic = {'仙台市': 4100, '青葉区': 4101, '宮城野区': 4102, '若林区': 4103,
-            '太白区': 4104, '泉区': 4105, '白石市': 4206, '角田市': 4208,
-            '蔵王町': 4301, '七ヶ宿町': 4302, '大河原町': 4321, '村田町': 4322,
-            '柴田町': 4323, '川崎町': 4324, '丸森町': 4341, '名取市': 4207,
-            '岩沼市': 4211, '亘理町': 4361, '山元町': 4362, '塩釜市': 4203,
-            '多賀城市': 4209, '富谷市': 4216, '松島町': 4401, '七ヶ浜町': 4404,
-            '利府町': 4406, '大和町': 4421, '大郷町': 4422, '大衡村': 4424,
-            '大崎市': 4215, '色麻町': 4444, '加美町': 4445, '涌谷町': 4501,
-            '美里町': 4505, '栗原市': 4213, '登米市': 4212, '石巻市': 4202,
-            '東松島市': 4214, '女川町': 4581, '気仙沼市': 4205,
-            '南三陸町': 4606}
+city_dic = dict(仙台市=4100, 青葉区=4101, 宮城野区=4102, 若林区=4103,
+                太白区=4104, 泉区=4105, 白石市=4206, 角田市=4208, 蔵王町=4301,
+                七ヶ宿町=4302, 大河原町=4321, 村田町=4322, 柴田町=4323,
+                川崎町=4324, 丸森町=4341, 名取市=4207, 岩沼市=4211, 亘理町=4361,
+                山元町=4362, 塩釜市=4203, 多賀城市=4209, 富谷市=4216,
+                松島町=4401, 七ヶ浜町=4404, 利府町=4406, 大和町=4421,
+                大郷町=4422, 大衡村=4424, 大崎市=4215, 色麻町=4444, 加美町=4445,
+                涌谷町=4501, 美里町=4505, 栗原市=4213, 登米市=4212, 石巻市=4202,
+                東松島市=4214, 女川町=4581, 気仙沼市=4205, 南三陸町=4606)
 
 # 今日の月日を取得する
 today_date = date.today()
@@ -45,7 +48,7 @@ today_date = date.today()
 amedas_point = st.sidebar.selectbox('アメダス地点の選択（過去の平均気温）',
                                     amedas_list, index=7)
 # アメダスのリストから指定地点のインデックスを取得
-amedas_point_index = amedas_list.index(amedas_point)
+amedas_point_i = amedas_list.index(amedas_point)
 # 市町村を入れる
 city = st.sidebar.selectbox('市町村の選択（天気予報）', city_dic, index=35)
 # 播種月日を入れる
@@ -60,7 +63,7 @@ seeding_date = seeding_date if (date(this_year, 3, 1) < seeding_date) \
 # 播種日から利用日前日までのアメダス平均気温を取得
 # アメダスの過去データから指定地点・指定月の日平均気温をリストとして取得する関数
 # さらに、リストの取得開始日と終了日も指定できるようにしている。
-def scrape_amedas_temp(month, area, s_day, e_day):
+def scrape_temp(month, area, s_day, e_day):
     url = (f'http://www.data.jma.go.jp/stats/etrn/view/daily_h1.php?prec_no'
            f'=34&block_no=00&year={this_year}&month={month}&day=&view=p2')
     df = pd.read_html(url)
@@ -68,31 +71,50 @@ def scrape_amedas_temp(month, area, s_day, e_day):
     return temp_list
 
 
+# 降水量取得関数
+def scrape_rain(month, area, s_day, e_day):
+    url = (f'http://www.data.jma.go.jp/stats/etrn/view/daily_h1.php?prec_no'
+           f'=34&block_no=00&year={this_year}&month={month}&day=&view=p1')
+    df = pd.read_html(url)
+    tl = list(df[0].iloc[s_day: e_day, area])
+    tl = [float(s) if s != '--' else 0.0 for s in tl]
+    return tl
+
+
 # 5月末までしか使えないよ
 # 播種日が使用日の前日より前で播種月と使用月が同じ場合
 yesterday_date = today_date - timedelta(days=1)
 if (seeding_date < yesterday_date and seeding_date.month ==
         yesterday_date.month):
-    past_temp = scrape_amedas_temp(seeding_date.month, amedas_point_index,
-                                   seeding_date.day, yesterday_date.day)
+    past_temp = scrape_temp(seeding_date.month, amedas_point_i,
+                            seeding_date.day, yesterday_date.day)
+    past_rain = scrape_rain(seeding_date.month, amedas_dic[amedas_point],
+                            seeding_date.day, yesterday_date.day)
+
 # 播種月が使用月より前の場合
 elif seeding_date.month < today_date.month:
-    past_temp = scrape_amedas_temp(seeding_date.month, amedas_point_index,
-                                   seeding_date.day, 31)
+    past_temp = scrape_temp(seeding_date.month, amedas_point_i,
+                            seeding_date.day, 31)
+    past_rain = scrape_rain(seeding_date.month, amedas_dic[amedas_point],
+                            seeding_date.day, 31)
     sm = seeding_date.month + 1
     # 播種月が使用月の前月の場合
     if sm == today_date.month:
-        past_temp += scrape_amedas_temp(sm, amedas_point_index, 0,
-                                        today_date.day - 1)
+        past_temp += scrape_temp(sm, amedas_point_i, 0, today_date.day - 1)
+        past_rain += scrape_rain(sm, amedas_dic[amedas_point], 0,
+                                 today_date.day - 1)
     # 播種月が使用月の前々月の場合（3月播種-5月使用か4月播種-6月使用）
     else:
-        past_temp += scrape_amedas_temp(sm, amedas_point_index, 0, 31)
+        past_temp += scrape_temp(sm, amedas_point_i, 0, 31)
+        past_rain += scrape_rain(sm, amedas_dic[amedas_point], 0, 31)
         sm += 1
-        past_temp += scrape_amedas_temp(sm, amedas_point_index, 0,
-                                        today_date.day - 1)
+        past_temp += scrape_temp(sm, amedas_point_i, 0, today_date.day - 1)
+        past_rain += scrape_rain(sm, amedas_dic[amedas_point], 0,
+                                 today_date.day - 1)
 # 播種日が使用日より先の場合
 else:
     past_temp = []
+    past_rain = []
 
 # てんきのサイトから利用日から2週間の予想気温を取得
 ew_num = 3420 if city in east_city else 3410
@@ -109,8 +131,16 @@ def get_tmp(clas_name):
     return tl
 
 
+def get_rain(clas_name):
+    rsp = soup1.find_all('div', class_=clas_name)
+    rlt = [r.text for r in rsp]
+    rl = [int(re.sub(r"\D", "", s)) for s in rlt[1:31]]
+    return rl
+
+
 max_tmp_list = get_tmp('high-temp')
 min_tmp_list = get_tmp('low-temp')
+forecast_rain = get_rain('precip')
 # 最高気温と最低気温から平均気温を算出すると、0.3度高くなるので、－0.3している
 forecast_temp = [(x1 + y1) / 2 - 0.3 for (x1, y1) in
                  zip(max_tmp_list, min_tmp_list)]
@@ -122,16 +152,18 @@ df_ave_temp = pd.read_csv('temp.csv', encoding='shift_jis')
 # 気温のリストの取得開始日（今日の１４日後）を計算
 # 2か年平均と５か年平均の2種類のリストを作成する。
 start_day = (today_date - date(this_year, 3, 1) + timedelta(days=14))
-ave_temp2 = list(df_ave_temp.iloc[start_day.days:, amedas_point_index + 1])
-ave_temp5 = list(df_ave_temp.iloc[start_day.days:, amedas_point_index + 20])
+ave_temp2 = list(df_ave_temp.iloc[start_day.days:, amedas_point_i + 1])
+ave_temp5 = list(df_ave_temp.iloc[start_day.days:, amedas_point_i + 20])
 
-# 平均気温を結合する
+# 平均気温、降水量の各リストを結合する
 combine_temp2 = past_temp + forecast_temp + ave_temp2
 combine_temp5 = past_temp + forecast_temp + ave_temp5
+combine_rain = past_rain + forecast_rain
 # 播種日より前に使用する場合に、播種日から積算を開始する
 if (dd := seeding_date - yesterday_date) >= timedelta():
     combine_temp2 = combine_temp2[dd.days:]
     combine_temp5 = combine_temp5[dd.days:]
+    combine_rain = combine_rain[dd.days:]
 
 # 平均気温リストから11.5℃を引いた有効積算リストを作成
 valid_temp2 = [0 if xx * 10 <= 115 else round(xx - 11.5, 1) for xx in
@@ -177,6 +209,7 @@ st.text(
     f'50℃に達するのは、{temp50_date5.month}月{temp50_date5.day}日（{temp50_temp5}℃）')
 st.text(f'100℃に達するのは、{temp100_date5.month}月{temp100_date5.day}日'
         f'（{temp100_temp5}℃）')
+st.write(combine_rain)
 
 # 積算グラフの表示
 # 2つの気温のリストの100までの積算和をリストで
@@ -193,8 +226,9 @@ df11 = df_ave_temp.iloc[s_index.days + 1: s_index.days + delta_date.days + 2,
 df1 = df11.reset_index(drop=True)
 df2 = pd.Series(accumulate_valid_temp2)
 df3 = pd.Series(accumulate_valid_temp5)
-df_chart = pd.concat([df3, df2, df1], axis=1)
-df_chart.columns = ['5か年平均使用', '2か年平均使用', '月日']
+df4 = pd.Series(combine_rain)
+df_chart = pd.concat([df3, df2, df1, df4], axis=1)
+df_chart.columns = ['5か年平均使用', '2か年平均使用', '月日', '降水量']
 
 fig = px.line(df_chart, x='月日', y=['5か年平均使用', '2か年平均使用'])
 fig.update_layout(xaxis_title='月/日', yaxis_title='有効積算気温（℃）',
