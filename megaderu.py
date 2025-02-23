@@ -5,11 +5,11 @@ from bs4 import BeautifulSoup
 import streamlit as st
 import plotly.express as px
 
-st.set_page_config(page_title='めがで～る 2025')
+st.set_page_config(page_title='めがで～る 2025', page_icon='icon.ico',
+                   initial_sidebar_state='expanded')
 st.title('めがで～る 2025')
 st.caption('これは、乾田直播の出芽を予測するウェブアプリ（2025年版）です。')
-st.caption(
-    '予測がはずれても責任は一切取りませんので、ご了承のうえお使いください。')
+st.caption('予測がはずれても責任は一切取りませんので、ご了承のうえお使いください。')
 st.caption('作成者：しがない普及指導員')
 
 st.text('👈👈左側を入力すると、予測結果が変わるよ！！')
@@ -197,11 +197,17 @@ df3 = pd.Series(accumulate_valid_temp5)
 
 df_chart = pd.concat([df3, df2, df1], axis=1)
 df_chart.columns = ['5か年平均使用', '2か年平均使用', '月日']
+
 fig = px.line(df_chart, x='月日', y=['5か年平均使用', '2か年平均使用'])
-fig.update_layout(xaxis_title='月日', yaxis_title='有効積算気温',
-                  legend=dict(x=0.05, y=0.95), legend_traceorder="reversed")
-# 背景の特定部分の色を変更
-fig.update_layout(shapes=[dict(type='rect', x0=0, x1=delta_date.days, y0=30,
-                               y1=50,
-                  fillcolor='LightSkyBlue', opacity=0.5, layer='below')])
+fig.update_layout(xaxis_title='月/日', yaxis_title='有効積算気温（℃）',
+                  legend=dict(x=0.05, y=0.95), legend_traceorder="reversed",
+                  shapes=[dict(type='rect', x0=0, x1=delta_date.days, y0=30,
+                               y1=50, fillcolor='lightgreen', opacity=0.5,
+                               layer='below')])
+fig.update_traces(mode="lines", hovertemplate=None)
+fig.update_layout(hovermode="x unified")
+fig.update_yaxes(range=(0, 110), dtick=10)
+fig.update_xaxes(dtick=5)
+fig.update_traces(selector=dict(name='2か年平均使用'), line=dict(color='orange'))
+fig.update_traces(selector=dict(name='5か年平均使用'), line=dict(color='yellow'))
 st.plotly_chart(fig, use_container_width=True)
