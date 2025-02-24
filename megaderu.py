@@ -55,8 +55,8 @@ city = st.sidebar.selectbox('市町村の選択（天気予報）', city_dic, in
 seeding_d = st.sidebar.date_input('播種日の入力', date(this_year, 4, 1))
 
 # 播種日が3月１日以前の場合は。播種日を３月１日に補正する。
-seeding_d = seeding_d if (date(this_year, 3, 1) < seeding_d) \
-    else date(this_year, 3, 1)
+mar1_day = date(this_year, 3, 1)
+seeding_d = seeding_d if (mar1_day < seeding_d) else mar1_day
 
 
 # 気温の積算は、播種日の翌日から積算を開始すること。
@@ -68,7 +68,8 @@ def scrape_temp(month, s_day, e_day):
            f'=34&block_no=00&year={this_year}&month={month}&day=&view=p2')
     df = pd.read_html(url)
     tl = list(df[0].iloc[s_day: e_day, amedas_point_i + 1])
-    return tl
+    tl1 = [float(re.sub(r'\)', '', a)) if isinstance(a, str) else a for a in tl]
+    return tl1
 
 
 # 降水量取得関数
