@@ -4,7 +4,9 @@ from datetime import date, timedelta
 import requests
 from bs4 import BeautifulSoup
 import streamlit as st
-import plotly.express as px
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
+from streamlit import title
 
 st.set_page_config(page_title='めがで～る 2025', page_icon='icon.ico',
                    initial_sidebar_state='expanded')
@@ -209,7 +211,6 @@ st.text(
     f'50℃に達するのは、{temp50_date5.month}月{temp50_date5.day}日（{temp50_temp5}℃）')
 st.text(f'100℃に達するのは、{temp100_date5.month}月{temp100_date5.day}日'
         f'（{temp100_temp5}℃）')
-st.write(combine_rain)
 
 # 積算グラフの表示
 # 2つの気温のリストの100までの積算和をリストで
@@ -230,16 +231,25 @@ df4 = pd.Series(combine_rain)
 df_chart = pd.concat([df3, df2, df1, df4], axis=1)
 df_chart.columns = ['5か年平均使用', '2か年平均使用', '月日', '降水量']
 
-fig = px.line(df_chart, x='月日', y=['5か年平均使用', '2か年平均使用'])
-fig.update_layout(xaxis_title='月/日', yaxis_title='有効積算気温（℃）',
-                  legend=dict(x=0.05, y=0.95), legend_traceorder="reversed",
-                  shapes=[dict(type='rect', x0=0, x1=delta_date.days, y0=30,
+fig = make_subplots(specs=[[{'secondary_y': True}]])
+
+fig.add_trace(go.Bar(x=df_chart['月日'], y=df_chart['降水量'], name='降水量',
+                     marker=dict(color='blue')), secondary_y=True)
+fig.add_trace(go.Scatter(x=df_chart['月日'], y=df_chart['5か年平均使用'],
+                         name='5か年平均', line=dict(color='yellow')))
+fig.add_trace(go.Scatter(x=df_chart['月日'], y=df_chart['2か年平均使用'],
+                         name='2か年(高温年）平均', line=dict(color='orange')))
+
+fig.update_layout(xaxis=dict(title='月/日', dtick=5),
+                  yaxis1=dict(title='有効積算気温（℃）', range=(0, 110), dtick=10),
+                  yaxis2=dict(title='降水量（mm）', range=(0, 27.5), dtick=5,
+                              showgrid=False),
+                  legend=dict(x=0.05, y=0.95, traceorder='reversed'))
+
+fig.update_layout(shapes=[dict(type='rect', x0=0, x1=delta_date.days, y0=30,
                                y1=50, fillcolor='lightgreen', opacity=0.5,
                                layer='below')])
-fig.update_traces(mode="lines", hovertemplate=None)
 fig.update_layout(hovermode="x unified")
-fig.update_yaxes(range=(0, 110), dtick=10)
-fig.update_xaxes(dtick=5)
-fig.update_traces(selector=dict(name='2か年平均使用'), line=dict(color='orange'))
-fig.update_traces(selector=dict(name='5か年平均使用'), line=dict(color='yellow'))
+
+
 st.plotly_chart(fig, use_container_width=True)
