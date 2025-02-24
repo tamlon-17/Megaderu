@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 import streamlit as st
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-from streamlit import title
 
 st.set_page_config(page_title='めがで～る 2025', page_icon='icon.ico',
                    initial_sidebar_state='expanded')
@@ -14,24 +13,19 @@ st.title('めがで～る 2025')
 st.caption('これは、乾田直播の出芽を予測するウェブアプリ（2025年版）です。')
 st.caption('予測がはずれても責任は一切取りませんので、ご了承のうえお使いください。')
 st.caption('作成者：しがない普及指導員')
-
 st.text('👈👈左側を入力すると、予測結果が変わるよ！！')
-
 st.subheader('予測結果')
+
 # 使用する年を今年に設定
 this_year = date.today().year
-# リストや辞書の定義
 # アメダス地点をリスト化と辞書化（気象庁の並びで統一）
-amedas_list = ['気仙沼', '川渡', '築館', '志津川', '古川', '大衡', '鹿島台',
-               '石巻', '新川', '仙台', '白石', '亘理', '米山', '塩釜', '駒ノ湯',
-               '丸森', '名取', '蔵王', '女川']
+amedas_l = ['気仙沼', '川渡', '築館', '志津川', '古川', '大衡', '鹿島台', '石巻', '新川', '仙台', '白石', '亘理', '米山', '塩釜', '駒ノ湯', '丸森', '名取', '蔵王', '女川']
 amedas_dic = dict(気仙沼=1, 川渡=2, 築館=3, 志津川=4, 古川=5, 大衡=6, 鹿島台=7,
                   石巻=8, 新川=9, 仙台=10, 白石=11, 亘理=12, 米山=14, 塩釜=15,
                   駒ノ湯=16, 丸森=17, 名取=20, 蔵王=23, 女川=24)
 
 # 西部の市町村をリスト化
-east_city = ['泉区', '白石市', '蔵王町', '七ヶ宿町', '川崎町', '大和町',
-             '大衡村', '色麻町', '加美町']
+east_city = ['泉区', '白石市', '蔵王町', '七ヶ宿町', '川崎町', '大和町', '大衡村', '色麻町', '加美町']
 # 市町村と気象協会のコードの辞書
 city_dic = dict(仙台市=4100, 青葉区=4101, 宮城野区=4102, 若林区=4103,
                 太白区=4104, 泉区=4105, 白石市=4206, 角田市=4208, 蔵王町=4301,
@@ -44,20 +38,20 @@ city_dic = dict(仙台市=4100, 青葉区=4101, 宮城野区=4102, 若林区=410
                 東松島市=4214, 女川町=4581, 気仙沼市=4205, 南三陸町=4606)
 
 # 今日の月日を取得する
-today_date = date.today()
+today_d = date.today()
 # with st.form
 # アメダスの地点を入れる
 amedas_point = st.sidebar.selectbox('アメダス地点の選択（過去の平均気温）',
-                                    amedas_list, index=7)
+                                    amedas_l, index=7)
 # アメダスのリストから指定地点のインデックスを取得
-amedas_point_i = amedas_list.index(amedas_point)
+amedas_point_i = amedas_l.index(amedas_point)
 # 市町村を入れる
 city = st.sidebar.selectbox('市町村の選択（天気予報）', city_dic, index=35)
 # 播種月日を入れる
-seeding_date = st.sidebar.date_input('播種日の入力', date(this_year, 4, 1))
+seeding_d = st.sidebar.date_input('播種日の入力', date(this_year, 4, 1))
 
 # 播種日が3月１日以前の場合は。播種日を３月１日に補正する。
-seeding_date = seeding_date if (date(this_year, 3, 1) < seeding_date) \
+seeding_d = seeding_d if (date(this_year, 3, 1) < seeding_d) \
     else date(this_year, 3, 1)
 
 
@@ -65,54 +59,53 @@ seeding_date = seeding_date if (date(this_year, 3, 1) < seeding_date) \
 # 播種日から利用日前日までのアメダス平均気温を取得
 # アメダスの過去データから指定地点・指定月の日平均気温をリストとして取得する関数
 # さらに、リストの取得開始日と終了日も指定できるようにしている。
-def scrape_temp(month, area, s_day, e_day):
+def scrape_temp(month, s_day, e_day):
     url = (f'http://www.data.jma.go.jp/stats/etrn/view/daily_h1.php?prec_no'
            f'=34&block_no=00&year={this_year}&month={month}&day=&view=p2')
     df = pd.read_html(url)
-    temp_list = list(df[0].iloc[s_day: e_day, area + 1])
-    return temp_list
+    tl = list(df[0].iloc[s_day: e_day, amedas_point_i + 1])
+    return tl
 
 
 # 降水量取得関数
-def scrape_rain(month, area, s_day, e_day):
+def scrape_rain(month, s_day, e_day):
     url = (f'http://www.data.jma.go.jp/stats/etrn/view/daily_h1.php?prec_no'
            f'=34&block_no=00&year={this_year}&month={month}&day=&view=p1')
     df = pd.read_html(url)
-    tl = list(df[0].iloc[s_day: e_day, area])
-    tl = [float(s) if s != '--' else 0.0 for s in tl]
-    return tl
+    rl = list(df[0].iloc[s_day: e_day, amedas_dic[amedas_point]])
+    rl = [float(s) if s != '--' else 0.0 for s in rl]
+    return rl
+
+
+def screpe(month, s_day, e_day):
+    tl = scrape_temp(month, s_day, e_day)
+    rl = scrape_rain(month, s_day, e_day)
+    return tl, rl
 
 
 # 5月末までしか使えないよ
 # 播種日が使用日の前日より前で播種月と使用月が同じ場合
-yesterday_date = today_date - timedelta(days=1)
-if (seeding_date < yesterday_date and seeding_date.month ==
-        yesterday_date.month):
-    past_temp = scrape_temp(seeding_date.month, amedas_point_i,
-                            seeding_date.day, yesterday_date.day)
-    past_rain = scrape_rain(seeding_date.month, amedas_dic[amedas_point],
-                            seeding_date.day, yesterday_date.day)
-
+yesterday_d = today_d - timedelta(days=1)
+if seeding_d < yesterday_d and seeding_d.month == yesterday_d.month:
+    past_temp, past_rain = screpe(seeding_d.month, seeding_d.day, yesterday_d.day)
 # 播種月が使用月より前の場合
-elif seeding_date.month < today_date.month:
-    past_temp = scrape_temp(seeding_date.month, amedas_point_i,
-                            seeding_date.day, 31)
-    past_rain = scrape_rain(seeding_date.month, amedas_dic[amedas_point],
-                            seeding_date.day, 31)
-    sm = seeding_date.month + 1
+elif seeding_d.month < today_d.month:
+    past_temp, past_rain = screpe(seeding_d.month, seeding_d.day, 31)
+    sm = seeding_d.month + 1
     # 播種月が使用月の前月の場合
-    if sm == today_date.month:
-        past_temp += scrape_temp(sm, amedas_point_i, 0, today_date.day - 1)
-        past_rain += scrape_rain(sm, amedas_dic[amedas_point], 0,
-                                 today_date.day - 1)
+    if sm == today_d.month:
+        past_temp1, past_rain1 = screpe(sm, 0, today_d.day - 1)
+        past_temp += past_temp1
+        past_rain += past_rain1
     # 播種月が使用月の前々月の場合（3月播種-5月使用か4月播種-6月使用）
     else:
-        past_temp += scrape_temp(sm, amedas_point_i, 0, 31)
-        past_rain += scrape_rain(sm, amedas_dic[amedas_point], 0, 31)
+        past_temp2, past_rain2 = screpe(sm, 0, 31)
+        past_temp += past_temp2
+        past_rain += past_rain2
         sm += 1
-        past_temp += scrape_temp(sm, amedas_point_i, 0, today_date.day - 1)
-        past_rain += scrape_rain(sm, amedas_dic[amedas_point], 0,
-                                 today_date.day - 1)
+        past_temp3, past_rain3 = screpe(sm, 0, today_d.day - 1)
+        past_temp += past_temp3
+        past_rain += past_rain3
 # 播種日が使用日より先の場合
 else:
     past_temp = []
@@ -153,7 +146,7 @@ df_ave_temp = pd.read_csv('temp.csv', encoding='shift_jis')
 
 # 気温のリストの取得開始日（今日の１４日後）を計算
 # 2か年平均と５か年平均の2種類のリストを作成する。
-start_day = (today_date - date(this_year, 3, 1) + timedelta(days=14))
+start_day = (today_d - date(this_year, 3, 1) + timedelta(days=14))
 ave_temp2 = list(df_ave_temp.iloc[start_day.days:, amedas_point_i + 1])
 ave_temp5 = list(df_ave_temp.iloc[start_day.days:, amedas_point_i + 20])
 
@@ -162,7 +155,7 @@ combine_temp2 = past_temp + forecast_temp + ave_temp2
 combine_temp5 = past_temp + forecast_temp + ave_temp5
 combine_rain = past_rain + forecast_rain
 # 播種日より前に使用する場合に、播種日から積算を開始する
-if (dd := seeding_date - yesterday_date) >= timedelta():
+if (dd := seeding_d - yesterday_d) >= timedelta():
     combine_temp2 = combine_temp2[dd.days:]
     combine_temp5 = combine_temp5[dd.days:]
     combine_rain = combine_rain[dd.days:]
@@ -184,7 +177,7 @@ def addition_target_temp(vtl, temp):
         c += 1
         if t >= temp:
             t = round(t, 1)
-            s_date = seeding_date + timedelta(days=c)
+            s_date = seeding_d + timedelta(days=c)
             break
     return t, s_date
 
@@ -214,13 +207,13 @@ st.text(f'100℃に達するのは、{temp100_date5.month}月{temp100_date5.day}
 
 # 積算グラフの表示
 # 2つの気温のリストの100までの積算和をリストで
-delta_date = temp100_date2 - seeding_date
+delta_date = temp100_date2 - seeding_d
 accumulate_valid_temp2 = [sum(valid_temp2[:n + 1]) for n in
                           range(delta_date.days + 1)]
 accumulate_valid_temp5 = [sum(valid_temp5[:n + 1]) for n in
                           range(delta_date.days + 1)]
 # CSVのカラム1から播種日のインデックスを取って、グラフのX軸を作る。
-s_index = seeding_date - date(this_year, 3, 1)
+s_index = seeding_d - date(this_year, 3, 1)
 df11 = df_ave_temp.iloc[s_index.days + 1: s_index.days + delta_date.days + 2,
                         [0]]
 
