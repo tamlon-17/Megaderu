@@ -171,15 +171,13 @@ valid_t5 = [0 if xx * 10 <= 115 else round(xx - 11.5, 1) for xx in combine_t5]
 
 # 積算気温が指定の温度になる日とその時の積算気温を返す関数
 def addition_target_temp(vtl, temp):
-    s_date = 0
     t = 0
-    c = 0
-    for n in vtl:
+    s_date = 0
+    for i, n in enumerate(vtl, 1):
         t += n
-        c += 1
         if t >= temp:
             t = round(t, 1)
-            s_date = seeding_d + timedelta(days=c)
+            s_date = seeding_d + timedelta(days=i)
             break
     return t, s_date
 
@@ -240,3 +238,4 @@ fig.update_layout(shapes=[dict(type='rect', x0=0, x1=delta_d.days, y0=30,
 fig.update_layout(hovermode='x unified')
 
 st.plotly_chart(fig, use_container_width=True)
+st.text('降水量は、前日まではアメダスデータ。当日から10日後までは天気予報が表示される。')
