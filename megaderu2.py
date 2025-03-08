@@ -44,7 +44,7 @@ today_d = date.today()
 # with st.form
 # アメダスの地点を入れる
 amedas_point = st.selectbox('アメダス地点の選択（過去の平均気温）',
-                                    amedas_l, index=7)
+                            amedas_l, index=7)
 # アメダスのリストから指定地点のインデックスを取得
 amedas_point_i = amedas_l.index(amedas_point)
 # 市町村を入れる
@@ -57,6 +57,8 @@ mar1_day = date(this_year, 3, 1)
 seeding_d = seeding_d if (mar1_day < seeding_d) else mar1_day
 
 st.subheader('予測結果')
+
+
 # 気温の積算は、播種日の翌日から積算を開始すること。
 # 播種日から利用日前日までのアメダス平均気温を取得
 # アメダスの過去データから指定地点・指定月の日平均気温をリストとして取得する関数
@@ -197,7 +199,8 @@ st.text(
 st.text('直近5か年の平均気温で予測すると、')
 st.text(f'30℃に達するのは、{temp30_d5.month}月{temp30_d5.day}日（{temp30_t5}℃）')
 st.text(f'50℃に達するのは、{temp50_d5.month}月{temp50_d5.day}日（{temp50_t5}℃）')
-st.text(f'100℃に達するのは、{temp100_d5.month}月{temp100_d5.day}日（{temp100_t5}℃）')
+st.text(
+    f'100℃に達するのは、{temp100_d5.month}月{temp100_d5.day}日（{temp100_t5}℃）')
 
 # 積算グラフの表示
 # 2つの気温のリストの100までの積算和をリストで
@@ -237,4 +240,5 @@ fig.update_layout(shapes=[dict(type='rect', x0=0, x1=delta_d.days, y0=30,
 fig.update_layout(hovermode='x unified')
 
 st.plotly_chart(fig, use_container_width=True)
-st.text('降水量は、前日まではアメダスデータ。当日から10日後までは天気予報が表示される。')
+st.text(
+    '降水量は、前日まではアメダスデータ。当日から10日後までは天気予報が表示される。')
