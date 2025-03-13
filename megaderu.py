@@ -6,17 +6,15 @@ from bs4 import BeautifulSoup
 import streamlit as st
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
+import lxml
 
 st.set_page_config(page_title='めがで～る 2025', page_icon='icon.ico',
                    initial_sidebar_state='expanded')
 st.title('めがで～る 2025')
 st.caption('これは、乾田直播の出芽を予測するウェブアプリ（2025年版）です。')
-st.caption(
-    '予測がはずれても責任は一切取りませんので、ご了承のうえお使いください。')
-st.caption('作成者：しがない普及指導員')
-st.text('👈👈左側を入力すると、予測結果が変わるよ！！')
-st.subheader('予測結果')
 
+if st.button('アプリの説明～必ず読んでね！'):
+    st.switch_page('pages/page1.py')
 # 使用する年を今年に設定
 this_year = date.today().year
 # アメダス地点をリスト化と辞書化（気象庁の並びで統一）
@@ -45,18 +43,20 @@ city_dic = dict(仙台市=4100, 青葉区=4101, 宮城野区=4102, 若林区=410
 today_d = date.today()
 # with st.form
 # アメダスの地点を入れる
-amedas_point = st.sidebar.selectbox('アメダス地点の選択（過去の平均気温）',
-                                    amedas_l, index=7)
+amedas_point = st.selectbox('アメダス地点の選択（過去の平均気温）',
+                            amedas_l, index=7)
 # アメダスのリストから指定地点のインデックスを取得
 amedas_point_i = amedas_l.index(amedas_point)
 # 市町村を入れる
-city = st.sidebar.selectbox('市町村の選択（天気予報）', city_dic, index=35)
+city = st.selectbox('市町村の選択（天気予報）', city_dic, index=35)
 # 播種月日を入れる
-seeding_d = st.sidebar.date_input('播種日の入力', date(this_year, 4, 1))
+seeding_d = st.date_input('播種日の入力', date(this_year, 4, 1))
 
 # 播種日が3月１日以前の場合は。播種日を３月１日に補正する。
 mar1_day = date(this_year, 3, 1)
 seeding_d = seeding_d if (mar1_day < seeding_d) else mar1_day
+
+st.header('予測結果')
 
 
 # 気温の積算は、播種日の翌日から積算を開始すること。
@@ -199,7 +199,8 @@ st.text(
 st.text('直近5か年の平均気温で予測すると、')
 st.text(f'30℃に達するのは、{temp30_d5.month}月{temp30_d5.day}日（{temp30_t5}℃）')
 st.text(f'50℃に達するのは、{temp50_d5.month}月{temp50_d5.day}日（{temp50_t5}℃）')
-st.text(f'100℃に達するのは、{temp100_d5.month}月{temp100_d5.day}日（{temp100_t5}℃）')
+st.text(
+    f'100℃に達するのは、{temp100_d5.month}月{temp100_d5.day}日（{temp100_t5}℃）')
 
 # 積算グラフの表示
 # 2つの気温のリストの100までの積算和をリストで
@@ -239,4 +240,5 @@ fig.update_layout(shapes=[dict(type='rect', x0=0, x1=delta_d.days, y0=30,
 fig.update_layout(hovermode='x unified')
 
 st.plotly_chart(fig, use_container_width=True)
-st.text('降水量は、前日まではアメダスデータ。当日から10日後までは天気予報が表示される。')
+st.text(
+    '降水量は、前日まではアメダスデータ。当日から10日後までは天気予報が表示される。')
