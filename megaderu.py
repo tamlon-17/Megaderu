@@ -102,7 +102,10 @@ def scrape_rain(month, s_day, e_day):
            f'=34&block_no=00&year={this_year}&month={month}&day=&view=p1')
     df = pd.read_html(url)
     rl = list(df[0].iloc[s_day: e_day, amedas_dic[amedas_point]])
-    rl = [float(s) if isinstance(s, (int, float)) else 0.0 if s == '--' else float(s) for s in rl]
+    rl = [float(s) if isinstance(s, (int, float)) else 0.0 if s == '--'
+          else float(s) for s in rl]
+    rl = [float(re.sub(r'\)', '', str(a)).strip()) if isinstance(a, str) else a
+          for a in rl]
     return rl
 
 
