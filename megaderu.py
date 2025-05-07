@@ -12,7 +12,8 @@ st.set_page_config(page_title='めがで～る 2025', page_icon='icon.ico',
                    initial_sidebar_state='expanded')
 st.title('めがで～る 2025')
 st.caption('これは、乾田直播の出芽を予測するウェブアプリ（2025年版）です。')
-
+st.text('注意：2025年5月7日現在、アメダス地点で大衡、古川、志津川、新川を選択し、4月30日以前の播種日を選択するとエラーが出ます。')
+st.text('修正中ですので、しばらくお待ちください。（技術力不足で修正できない場合もあります）')
 if st.button('アプリの説明～必ず読んでね！'):
     st.switch_page('pages/page1.py')
 # 使用する年を今年に設定
