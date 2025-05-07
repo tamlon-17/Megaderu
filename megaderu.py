@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 import streamlit as st
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-import numpy as np
 import lxml
 
 st.set_page_config(page_title='めがで～る 2025', page_icon='icon.ico',
