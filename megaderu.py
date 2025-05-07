@@ -6,14 +6,17 @@ from bs4 import BeautifulSoup
 import streamlit as st
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
+import numpy as np
 import lxml
 
 st.set_page_config(page_title='めがで～る 2025', page_icon='icon.ico',
                    initial_sidebar_state='expanded')
 st.title('めがで～る 2025')
 st.caption('これは、乾田直播の出芽を予測するウェブアプリ（2025年版）です。')
-st.text('注意：2025年5月7日現在、アメダス地点で大衡、古川、志津川、新川を選択し、4月30日以前の播種日を選択するとエラーが出ます。')
-st.text('修正中ですので、しばらくお待ちください。（技術力不足で修正できない場合もあります）')
+st.text(
+    '注意：2025年5月7日現在、アメダス地点で大衡、古川、志津川、新川を選択し、4月30日以前の播種日を選択するとエラーが出ます。')
+st.text(
+    '修正中ですので、しばらくお待ちください。（技術力不足で修正できない場合もあります）')
 if st.button('アプリの説明～必ず読んでね！'):
     st.switch_page('pages/page1.py')
 # 使用する年を今年に設定
@@ -60,6 +63,25 @@ seeding_d = seeding_d if (mar1_day < seeding_d) else mar1_day
 st.header('予測結果')
 
 
+# クリーンアップの関数
+def clean_df(df):
+    """アメダスDFの数値以外のデータを数値に修正する関数
+
+    Args:
+        df (pd.DataFrame):生データのデータフレーム
+    Returns:
+        (pd.DataFrame): 要素がすべて数値になったデータフレーム
+    """
+    df = df.replace(["//", "#"], np.nan)
+    df = df.replace("--", 0.0)
+    df = df.replace([r"\)", r" \]"], "", regex=True)
+    try:
+        df = df.apply(pd.to_numeric, errors="coerce")  # 非数値は自動的にNaNに変換
+    except Exception as e:
+        print(f"Error during conversion: {e}")
+    return df
+
+
 # 気温の積算は、播種日の翌日から積算を開始すること。
 # 播種日から利用日前日までのアメダス平均気温を取得
 # アメダスの過去データから指定地点・指定月の日平均気温をリストとして取得する関数
@@ -69,7 +91,8 @@ def scrape_temp(month, s_day, e_day):
            f'=34&block_no=00&year={this_year}&month={month}&day=&view=p2')
     df = pd.read_html(url)
     tl = list(df[0].iloc[s_day: e_day, amedas_point_i + 1])
-    tl1 = [float(re.sub(r'\)', '', a)) if isinstance(a, str) else a for a in tl]
+    tl1 = [float(re.sub(r'\)', '', str(a)).strip()) if isinstance(a, str) else a
+           for a in tl]
     return tl1
 
 
@@ -79,7 +102,7 @@ def scrape_rain(month, s_day, e_day):
            f'=34&block_no=00&year={this_year}&month={month}&day=&view=p1')
     df = pd.read_html(url)
     rl = list(df[0].iloc[s_day: e_day, amedas_dic[amedas_point]])
-    rl = [float(s) if s != '--' else 0.0 for s in rl]
+    rl = [float(s) if isinstance(s, (int, float)) else 0.0 if s == '--' else float(s) for s in rl]
     return rl
 
 
