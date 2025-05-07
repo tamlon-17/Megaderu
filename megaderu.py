@@ -63,25 +63,6 @@ seeding_d = seeding_d if (mar1_day < seeding_d) else mar1_day
 st.header('予測結果')
 
 
-# クリーンアップの関数
-def clean_df(df):
-    """アメダスDFの数値以外のデータを数値に修正する関数
-
-    Args:
-        df (pd.DataFrame):生データのデータフレーム
-    Returns:
-        (pd.DataFrame): 要素がすべて数値になったデータフレーム
-    """
-    df = df.replace(["//", "#"], np.nan)
-    df = df.replace("--", 0.0)
-    df = df.replace([r"\)", r" \]"], "", regex=True)
-    try:
-        df = df.apply(pd.to_numeric, errors="coerce")  # 非数値は自動的にNaNに変換
-    except Exception as e:
-        print(f"Error during conversion: {e}")
-    return df
-
-
 # 気温の積算は、播種日の翌日から積算を開始すること。
 # 播種日から利用日前日までのアメダス平均気温を取得
 # アメダスの過去データから指定地点・指定月の日平均気温をリストとして取得する関数
@@ -102,7 +83,7 @@ def scrape_rain(month, s_day, e_day):
            f'=34&block_no=00&year={this_year}&month={month}&day=&view=p1')
     df = pd.read_html(url)
     rl = list(df[0].iloc[s_day: e_day, amedas_dic[amedas_point]])
-    rl = [float(re.sub(r'\)', '', str(a)).strip()) if isinstance(a, str) else a
+    rl = [re.sub(r'\)', '', str(a).strip()) if isinstance(a, str) else a
           for a in rl]
     rl = [float(s) if isinstance(s, (int, float)) else 0.0 if s == '--'
           else float(s) for s in rl]
