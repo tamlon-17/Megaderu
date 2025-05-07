@@ -145,8 +145,8 @@ def get_rain(clas_name):
 max_tmp_l = get_tmp('high-temp')
 min_tmp_l = get_tmp('low-temp')
 forecast_r = get_rain('precip')
-# 最高気温と最低気温から平均気温を算出すると、0.3度高くなるので、－0.3している
-forecast_t = [(x1 + y1) / 2 - 0.3 for (x1, y1) in zip(max_tmp_l, min_tmp_l)]
+# 最高気温と最低気温から平均気温を算出
+forecast_t = [(x1 + y1) / 2 for (x1, y1) in zip(max_tmp_l, min_tmp_l)]
 
 # CSVから利用日の２週間後からのアメダス平年値を取得
 # CSVをデータフレームに代入
